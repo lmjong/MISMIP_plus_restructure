@@ -1,0 +1,190 @@
+$name="<name>"
+$yearinsec = 31536000.0
+!$rhoi = 900.0/(1.0e6*yearinsec^2)   
+$rhoi=9.218352230172528E-019
+!$rhow = 1000.0/(1.0e6*yearinsec^2)
+$rhow=1.032294781330867E-018
+!$gravity = -9.80*yearinsec^2
+$gravity=-9759227869980866.0
+
+Header
+  Mesh DB "<MeshPath>" "<mesh>"
+End
+
+Constants
+  sea level = Real 0.0
+  water density = Real 1.032294781330867E-018
+End
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Simulation
+  Coordinate System  = Cartesian 2D 
+  Simulation Type = Transient     
+
+  Timestepping Method = "bdf"
+  BDF Order = 1
+  Output Intervals = 1
+  Timestep Intervals = 1
+  !Timestep Sizes = 0.05
+  Timestep Sizes = 0.5
+
+  Steady State Min Iterations = 1
+  Steady State Max Iterations = 1
+
+  Post File = "$name$.vtu"
+  OutPut File = "../../Results/$name".result"
+  Binary Output = Logical True
+
+  max output level = 3
+
+  Initialize Dirichlet Conditions = logical False
+
+End
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!For the SSA
+Body 1
+  Equation = 1
+  Body Force = 1
+  Material = 1
+  Initial Condition = 1
+End
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Initial Condition 1
+! Thickness
+
+! bedrock elevation
+ bedrock = Variable Coordinate 1, Coordinate 2
+    Real procedure "<ExecPath>/USF_MISMIP_Dom" "BedIni"
+
+End
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Body Force 1
+  Flow BodyForce 1 = Real 0.0                          
+  Flow BodyForce 2 = Real 0.0                          
+  Flow BodyForce 3 = Real 9746289290489502.0
+
+End
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Material 1
+
+  SSA Mean Density = Real 9.0495981688825880E-019
+! Material properties
+  Viscosity Exponent = Real 0.3333333333333333333            
+  Critical Shear Rate = Real 1.0e-16
+  Min H = Real 1.0e00
+
+End
+ 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Solver 1
+ ! This solver is intended to be used once before simulation to import data sets onto the FE mesh  
+  Exec Solver = Before simulation
+
+  Equation = "ScatteredInter"
+
+  procedure = "<ExecPath>/Scattered2DDataInterpolator" "Scattered2DDataInterpolator"
+  
+  !Bounding Box dx = Real 1.0e3  
+  ! will take only the data points that are within Max/Min mesh corrdinates + the real Value
+  ! can be usefull in parallel if all the data are stored in one file
+  ! (Default) no bounding box
+  
+  CheckNaN = Logical True 
+  ! Default True; check is interpolation method gives NaN 
+  ! By default replace NaN by nearest available value
+  ! We can replace NaNs by Real value with following flag
+  !Replace NaN by = Real -9999999 
+
+!!!!! NNI or linear (nn-c library)
+
+ ! Default Sibson interpolation
+  Variable 1 = String "H"
+  Variable 1 data file = File "h.dat"
+
+  Variable 2 = String "Zs"
+  Variable 2 data file = File "zs.dat"
+ !  Variable 2 W = Real 0.
+ ! W restricts extrapolation by assigning minimal allowed
+ !    weight for a vertex (normally "-1" or so; lower
+ !    values correspond to lower reliability; "0" means
+ !    no extrapolation)
+ ! Default W=-HUGE(RealNumber);i.e. extrapolation allowed
+
+  Variable 3 = String "Zb"
+  Variable 3 data file = File "zb.dat"
+ ! Variable 3 method = String "ns"
+ ! method Non-Sibsonian interpolation (nn-c); W can be applied here too
+End
+
+Solver 2
+   Equation = "Flotation"
+   Variable = GroundedMask
+   Procedure = "<ExecPath>/Flotation2" "Flotation"
+End
+
+Solver 3
+   Equation = "Thickness"
+   Exec Solver = never
+   Variable = -dofs 1 "H"
+
+   Exported Variable 1 = h
+   Exported Variable 2 = zs
+   Exported Variable 3 = zb   
+   Exported Variable 4 = bedrock
+
+
+   Procedure = "<ExecPath>/ThicknessSolver_MT" "ThicknessSolver"
+     Before Linsolve = "EliminateDirichlet" "EliminateDirichlet"
+
+   Linear System Solver = Direct
+   Linear System Direct Method = umfpack
+
+   Linear System Convergence Tolerance = 1.0e-12
+
+! equation is linear if no min/max
+   Nonlinear System Max Iterations = 15
+   Nonlinear System Convergence Tolerance  = 1.0e-09
+   Nonlinear System Relaxation Factor = 1.00
+
+  Apply Dirichlet = Logical True
+  Stabilization Method = Bubbles
+  Compute dHdT = Logical True
+
+!!  the convection velocity (mean horizontal velocity)
+    Flow Solution Name = String "SSAVelocity"
+End
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Equation 1
+  Active Solvers(3) = 1 2 3
+End
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Boundary Condition 1
+  name = "side1"
+  Target Boundaries = 1 
+
+End
+
+Boundary Condition 2
+  name = "calving front"
+  Target Boundaries = 2
+
+End
+
+Boundary Condition 3
+  name = "side2"
+  Target Boundaries = 3
+
+End
+
+Boundary Condition 4
+  name = "inflow"
+  Target Boundaries = 4
+End

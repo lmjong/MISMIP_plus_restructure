@@ -1,0 +1,52 @@
+CC=mpicc
+CCFLAG=-fPIC
+
+NN_HOME=<NN_HOME>
+CS_HOME=<CS_HOME>
+NNLIB=$(NN_HOME)/libnn.a
+CSLIB=$(CS_HOME)/libcsa.a
+
+ELMER_Scatter=<ELMER_Scatter>
+
+#NETCDF INCLUDE and LIBS Flags
+NETCDFHOME=""
+NETCDFINC="-I$(NETCDFHOME)/include"
+NETCDFLIBS="-L$(NETCDFHOME)/lib -lnetcdff -lnetcdf"
+
+
+
+SOLVERS_SRC=<SOLVERS_SRC>
+ExecPath=<Executables>
+
+SOLVERS_LIST=$(SOLVERS_SRC)/SSAStar.F90 \
+	$(SOLVERS_SRC)/Flotation2.F90 \
+	$(SOLVERS_SRC)/USF_MISMIP_Dom.F90 \
+	$(SOLVERS_SRC)/USF_MISMIP_Melt.F90 \
+	$(SOLVERS_SRC)/ ThicknessSolver_MT_Melt.F90 \
+	$(SOLVERS_SRC)/ ThicknessSolver_MT.F90
+
+
+solvers := $(filter %,$(patsubst %.F90,%,$(notdir $(SOLVERS_LIST)))) $(filter %,$(patsubst %.F90,%,$(LOCAL_SOLVERS)))
+
+GridDataReader: $(SOLVERS_SRC)/GridDataReader.F90 
+	elmerf90 $< -I$(NETCDFHOME)/include -L$(NETCDFHOME)/lib/ -lnetcdf -o $(ExecPath)/GridDataReader
+
+Scattered2DDataInterpolator: $(ELMER_Scatter)/Scattered2DDataInterpolator.F90 $(ExecPath)/csa_interpolate_points.o $(ExecPath)/Scattered2D_FInterface.o 
+	elmerf90 $(NETCDFINC) $^ $(NNLIB) $(CSLIB) -o $(ExecPath)/$@ $(NETCDFLIBS)
+
+$(ExecPath)/csa_interpolate_points.o : $(ELMER_Scatter)/csa_interpolate_points.c
+	$(CC) $(CCFLAG) -I$(CS_HOME) -c $^ -o $@
+
+$(ExecPath)/Scattered2D_FInterface.o : $(ELMER_Scatter)/Scattered2D_FInterface.F90
+	elmerf90-nosh -c $< -o $@
+
+all: $(solvers) 
+
+%: $(SOLVERS_SRC)/%.F90
+	elmerf90  $< -o $(ExecPath)/$@
+
+%:%.F90
+	elmerf90  $< -o $(ExecPath)/$@
+
+clean:
+	rm -f $(solvers) 
