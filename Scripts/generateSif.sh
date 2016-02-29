@@ -3,7 +3,7 @@
 #Experiment name corresponds to name of config file and sif template
 expname=$1
 source Config/run.config
-source Config/run.config
+
 source Config/"$expname".config
 
 mkdir $WORKDIR/$RUN_NAME/Results/$expname
@@ -19,7 +19,7 @@ cat $scketch | sed -e "s#<FileSource>#$FileSource#g" \
 		 -e "s#<ResultsPath>#$ResultsPath#g" \
 		 -e "s#<MeshPath>#$MeshPath#g" \
                  -e "s#<Restart>#$Restart#g" \
-                 -e "s#<ExecPath>#$ExecPath#g" \
+                 -e "s#<ExecPath>#$Executables#g" \
                  -e "s#<RestartPosition>#$RestartPosition#g" \
                  -e "s#<outIntervals>#$outIntervals#g" \
                  -e "s#<Intervals>#$Intervals#g" \
@@ -28,7 +28,7 @@ cat $scketch | sed -e "s#<FileSource>#$FileSource#g" \
                  -e "s#<eta>#$eta#g" \
                  -e "s#<accum>#$accum#g" \
                  -e "s#<name>#$name#g" \
-		 -e "s#<mesh>#$mesh#g" > $HOME_PATH/Runs/$RUN_NAME/$sifName
+		 -e "s#<mesh>#$MESH_NAME#g" > $HOME_PATH/Runs/$RUN_NAME/$sifName
 
 
 

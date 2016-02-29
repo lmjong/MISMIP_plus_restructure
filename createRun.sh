@@ -30,13 +30,14 @@ cp ./Scripts/scriptAfterRun.sh  Runs/$RUN_NAME/scriptAfterRun.sh
 
 echo "generating sifs from templates and config files"
 
-`./Scripts/generateSif.sh MP0`
-`./Scripts/generateSif.sh MP1r`
-`./Scripts/generateSif.sh MP1rr`
-`./Scripts/generateSif.sh MP1ra`
-`./Scripts/generateSif.sh MP2r`
-`./Scripts/generateSif.sh MP2rr`
-`./Scripts/generateSif.sh MP2ra`
+`./Scripts/generateSif.sh IceInit`
+`./Scripts/generateSif.sh Ice0`
+`./Scripts/generateSif.sh Ice1r`
+`./Scripts/generateSif.sh Ice1rr`
+`./Scripts/generateSif.sh Ice1ra`
+`./Scripts/generateSif.sh Ice2r`
+`./Scripts/generateSif.sh Ice2rr`
+`./Scripts/generateSif.sh Ice2ra`
 
 cd Runs/$RUN_NAME
 make GridDataReader
