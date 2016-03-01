@@ -44,7 +44,7 @@ Simulation
   Steady State Max Iterations = 1
 
   Post File = "$name$.vtu"
-  OutPut File = "<ResultsPath>/$name".result"
+  OutPut File = "../../$name".result"
   Binary Output = Logical True
 
   Restart File = "<Restart>"
@@ -124,7 +124,7 @@ Solver 2
    Procedure = "<ExecPath>/SSAStar" "SSABasalSolver"
 
    Linear System Solver = Direct
-   Linear System Direct Method = umfpack
+   Linear System Direct Method = mumps
 
    Nonlinear System Max Iterations = 50
    Nonlinear System Convergence Tolerance  = 1.0e-08
@@ -158,7 +158,7 @@ Solver 3
      Before Linsolve = "EliminateDirichlet" "EliminateDirichlet"
 
    Linear System Solver = Direct
-   Linear System Direct Method = umfpack
+   Linear System Direct Method = mumps 
 
    Linear System Convergence Tolerance = 1.0e-12
 
